@@ -73,9 +73,6 @@
             background: #007bff;
             color: white;
         }
-        .hidden {
-            display: none;
-        }
     </style>
 </head>
 <body>
@@ -92,14 +89,6 @@
         <select id="category-font">
             <option value="'Aref Ruqaa', serif">Aref Ruqaa</option>
             <option value="'Tajawal', sans-serif">Tajawal</option>
-            <option value="'Amiri', serif">Amiri</option>
-            <option value="'Changa', sans-serif">Changa</option>
-            <option value="'Cairo', sans-serif">Cairo</option>
-            <option value="'El Messiri', sans-serif">El Messiri</option>
-            <option value="'Harmattan', sans-serif">Harmattan</option>
-            <option value="'Lalezar', sans-serif">Lalezar</option>
-            <option value="'Mada', sans-serif">Mada</option>
-            <option value="'Reem Kufi', sans-serif">Reem Kufi</option>
         </select>
 
         <button onclick="addCategory()">إضافة قسم</button>
@@ -107,8 +96,8 @@
         <label for="post-content">محتوى المنشور:</label>
         <input type="text" id="post-content" placeholder="أدخل محتوى المنشور">
 
-        <label for="post-image">رابط صورة المنشور (اختياري):</label>
-        <input type="text" id="post-image" placeholder="أدخل رابط الصورة">
+        <label for="post-image">اختر صورة المنشور:</label>
+        <input type="file" id="post-image" accept="image/*">
 
         <label for="post-category">القسم:</label>
         <select id="post-category"></select>
@@ -180,7 +169,7 @@
                 return;
             }
 
-            categories.push({ name, background, font, hidden: false });
+            categories.push({ name, background, font });
             localStorage.setItem('categories', JSON.stringify(categories));
             renderCategories();
             renderTable();
@@ -189,38 +178,42 @@
 
         function addPost() {
             const content = document.getElementById('post-content').value;
-            const image = document.getElementById('post-image').value;
+            const imageInput = document.getElementById('post-image');
             const categoryIndex = postCategorySelect.value;
 
-            if (!content || categoryIndex === '') {
-                renderToast('يجب إدخال محتوى المنشور واختيار قسم!', false);
+            if (!content || categoryIndex === '' || !imageInput.files[0]) {
+                renderToast('يجب إدخال محتوى المنشور واختيار قسم واختيار صورة!', false);
                 return;
             }
 
-            const category = categories[categoryIndex];
-            posts[category.name] = posts[category.name] || [];
-            posts[category.name].unshift({ content, image });
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const imageBase64 = event.target.result;
+                const category = categories[categoryIndex];
 
-            localStorage.setItem('posts', JSON.stringify(posts));
-            renderToast('تمت إضافة المنشور بنجاح!');
+                posts[category.name] = posts[category.name] || [];
+                posts[category.name].unshift({ content, image: imageBase64 });
+
+                localStorage.setItem('posts', JSON.stringify(posts));
+                renderToast('تمت إضافة المنشور بنجاح!');
+            };
+
+            reader.readAsDataURL(imageInput.files[0]);
         }
 
-        // تعديل القسم
         function editCategory(index) {
             const category = categories[index];
             document.getElementById('category-name').value = category.name;
             document.getElementById('category-bg').value = category.background;
             document.getElementById('category-font').value = category.font;
 
-            categories.splice(index, 1); // حذف القسم القديم
+            categories.splice(index, 1);
             localStorage.setItem('categories', JSON.stringify(categories));
             renderCategories();
             renderTable();
-
             renderToast('تم تعديل القسم بنجاح!');
         }
 
-        // حذف القسم
         function deleteCategory(index) {
             categories.splice(index, 1);
             localStorage.setItem('categories', JSON.stringify(categories));
