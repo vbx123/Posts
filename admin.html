@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>صفحة الإدارة</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Aref+Ruqaa&family=Tajawal:wght@400;700&display=swap');
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 0;
+            padding: 0;
+            direction: rtl;
+            background: #f8f9fa;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            font-family: 'Aref Ruqaa', serif;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            display: none;
+            z-index: 1000;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        table th {
+            background: #007bff;
+            color: white;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>لوحة التحكم</h1>
+
+        <label for="category-name">اسم القسم:</label>
+        <input type="text" id="category-name" placeholder="أدخل اسم القسم">
+
+        <label for="category-bg">رابط خلفية القسم (اختياري):</label>
+        <input type="text" id="category-bg" placeholder="أدخل رابط الخلفية">
+
+        <label for="category-font">خط العرض:</label>
+        <select id="category-font">
+            <option value="'Aref Ruqaa', serif">Aref Ruqaa</option>
+            <option value="'Tajawal', sans-serif">Tajawal</option>
+            <option value="'Amiri', serif">Amiri</option>
+            <option value="'Changa', sans-serif">Changa</option>
+            <option value="'Cairo', sans-serif">Cairo</option>
+            <option value="'El Messiri', sans-serif">El Messiri</option>
+            <option value="'Harmattan', sans-serif">Harmattan</option>
+            <option value="'Lalezar', sans-serif">Lalezar</option>
+            <option value="'Mada', sans-serif">Mada</option>
+            <option value="'Reem Kufi', sans-serif">Reem Kufi</option>
+        </select>
+
+        <button onclick="addCategory()">إضافة قسم</button>
+
+        <label for="post-content">محتوى المنشور:</label>
+        <input type="text" id="post-content" placeholder="أدخل محتوى المنشور">
+
+        <label for="post-image">رابط صورة المنشور (اختياري):</label>
+        <input type="text" id="post-image" placeholder="أدخل رابط الصورة">
+
+        <label for="post-category">القسم:</label>
+        <select id="post-category"></select>
+
+        <button onclick="addPost()">إضافة منشور</button>
+
+        <div class="toast" id="toast"></div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>العنصر</th>
+                    <th>نوع</th>
+                    <th>تعديل/حذف</th>
+                </tr>
+            </thead>
+            <tbody id="items-table"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const categories = JSON.parse(localStorage.getItem('categories')) || [];
+        const posts = JSON.parse(localStorage.getItem('posts')) || {};
+
+        const postCategorySelect = document.getElementById('post-category');
+        const itemsTable = document.getElementById('items-table');
+        const toast = document.getElementById('toast');
+
+        function renderToast(message, success = true) {
+            toast.style.display = 'block';
+            toast.style.background = success ? '#28a745' : '#dc3545';
+            toast.textContent = message;
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+
+        function renderCategories() {
+            postCategorySelect.innerHTML = '';
+            categories.forEach((category, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = category.name;
+                postCategorySelect.appendChild(option);
+            });
+        }
+
+        function renderTable() {
+            itemsTable.innerHTML = '';
+            categories.forEach((category, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${category.name}</td>
+                    <td>قسم</td>
+                    <td>
+                        <button onclick="editCategory(${index})">تعديل</button>
+                        <button onclick="deleteCategory(${index})">حذف</button>
+                    </td>
+                `;
+                itemsTable.appendChild(row);
+            });
+        }
+
+        function addCategory() {
+            const name = document.getElementById('category-name').value;
+            const background = document.getElementById('category-bg').value;
+            const font = document.getElementById('category-font').value;
+
+            if (!name) {
+                renderToast('اسم القسم مطلوب!', false);
+                return;
+            }
+
+            categories.push({ name, background, font, hidden: false });
+            localStorage.setItem('categories', JSON.stringify(categories));
+            renderCategories();
+            renderTable();
+            renderToast('تمت إضافة القسم بنجاح!');
+        }
+
+        function addPost() {
+            const content = document.getElementById('post-content').value;
+            const image = document.getElementById('post-image').value;
+            const categoryIndex = postCategorySelect.value;
+
+            if (!content || categoryIndex === '') {
+                renderToast('يجب إدخال محتوى المنشور واختيار قسم!', false);
+                return;
+            }
+
+            const category = categories[categoryIndex];
+            posts[category.name] = posts[category.name] || [];
+            posts[category.name].unshift({ content, image });
+
+            localStorage.setItem('posts', JSON.stringify(posts));
+            renderToast('تمت إضافة المنشور بنجاح!');
+        }
+
+        // تعديل القسم
+        function editCategory(index) {
+            const category = categories[index];
+            document.getElementById('category-name').value = category.name;
+            document.getElementById('category-bg').value = category.background;
+            document.getElementById('category-font').value = category.font;
+
+            categories.splice(index, 1); // حذف القسم القديم
+            localStorage.setItem('categories', JSON.stringify(categories));
+            renderCategories();
+            renderTable();
+
+            renderToast('تم تعديل القسم بنجاح!');
+        }
+
+        // حذف القسم
+        function deleteCategory(index) {
+            categories.splice(index, 1);
+            localStorage.setItem('categories', JSON.stringify(categories));
+            renderCategories();
+            renderTable();
+            renderToast('تم حذف القسم بنجاح!');
+        }
+
+        renderCategories();
+        renderTable();
+    </script>
+</body>
+</html>

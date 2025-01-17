@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>عيون الغزال</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Aref+Ruqaa&family=Tajawal:wght@400;700&display=swap');
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 0;
+            padding: 0;
+            direction: rtl;
+            background: #f8f9fa;
+        }
+        header {
+            background: linear-gradient(90deg, #007bff, #00d1b2);
+            color: white;
+            padding: 5px 20px;  /* تقليل الحجم */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Aref Ruqaa', serif;
+        }
+        header a {
+            color: white;
+            text-decoration: none;
+            font-size: 16px; /* تصغير الحجم */
+            margin-left: 15px;
+            background-color: #28a745;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        header a:hover {
+            background-color: #218838;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .section-title {
+            font-family: 'Aref Ruqaa', serif;
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .categories, .posts {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 15px;
+        }
+        .category, .post {
+            width: 48%;  /* تقليل العرض */
+            min-width: 300px;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            transition: 0.3s;
+            background: rgba(255, 255, 255, 0.5);
+        }
+        .category:hover, .post:hover {
+            transform: scale(1.05);
+        }
+        .category img, .post img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+        }
+        .post-content {
+            font-size: 18px;
+            margin: 10px 0;
+            font-family: 'Aref Ruqaa', serif;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="#" onclick="goToAdmin()">صفحة الإدارة</a>
+        <h1>عيون الغزال</h1>
+        <a href="#" onclick="goToRegister()">التسجيل</a>
+    </header>
+
+    <div class="container">
+        <h2 class="section-title" id="section-title">الأقسام</h2>
+        <div class="categories" id="categories-container"></div>
+        <div class="posts hidden" id="posts-container"></div>
+        <button class="hidden" id="back-button" onclick="showCategories()">العودة</button>
+    </div>
+
+    <script>
+        const categories = JSON.parse(localStorage.getItem('categories')) || [];
+        const posts = JSON.parse(localStorage.getItem('posts')) || {};
+
+        const categoriesContainer = document.getElementById('categories-container');
+        const postsContainer = document.getElementById('posts-container');
+        const sectionTitle = document.getElementById('section-title');
+        const backButton = document.getElementById('back-button');
+
+        function renderCategories() {
+            categoriesContainer.innerHTML = '';
+            categories.forEach((category, index) => {
+                if (category.hidden) return;
+
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'category';
+                categoryDiv.style.backgroundImage = category.background
+                    ? `url(${category.background})`
+                    : '';
+                categoryDiv.style.backgroundSize = 'cover';
+                categoryDiv.style.color = category.background ? 'white' : 'black';
+                categoryDiv.innerHTML = `
+                    <h3 style="font-family: ${category.font || 'Tajawal'};">${category.name}</h3>
+                    <button onclick="showPosts(${index})">عرض المنشورات</button>
+                `;
+                categoriesContainer.appendChild(categoryDiv);
+            });
+        }
+
+        function renderPosts(categoryIndex) {
+            const category = categories[categoryIndex];
+            postsContainer.innerHTML = '';
+
+            if (!posts[category.name] || posts[category.name].length === 0) {
+                postsContainer.innerHTML = '<p>لا توجد منشورات في هذا القسم.</p>';
+                return;
+            }
+
+            posts[category.name].forEach(post => {
+                const postDiv = document.createElement('div');
+                postDiv.className = 'post';
+                postDiv.innerHTML = `
+                    <img src="${post.image || 'https://via.placeholder.com/300'}" alt="صورة المنشور">
+                    <p class="post-content">${post.content.replace(/\n/g, '<br>')}</p>
+                    <button onclick="copyContent('${post.content}')">نسخ</button>
+                    <button onclick="shareContent('${post.content}')">مشاركة</button>
+                `;
+                postsContainer.appendChild(postDiv);
+            });
+        }
+
+        function showCategories() {
+            categoriesContainer.classList.remove('hidden');
+            postsContainer.classList.add('hidden');
+            backButton.classList.add('hidden');
+            sectionTitle.textContent = 'الأقسام';
+        }
+
+        function showPosts(categoryIndex) {
+            categoriesContainer.classList.add('hidden');
+            postsContainer.classList.remove('hidden');
+            backButton.classList.remove('hidden');
+            sectionTitle.textContent = categories[categoryIndex].name;
+
+            renderPosts(categoryIndex);
+        }
+
+        function copyContent(content) {
+            navigator.clipboard.writeText(content).then(() => alert('تم نسخ المحتوى!'));
+        }
+
+        function shareContent(content) {
+            if (navigator.share) {
+                navigator.share({ text: content }).catch(err => console.error(err));
+            } else {
+                alert('المشاركة غير مدعومة في هذا المتصفح.');
+            }
+        }
+
+        function goToAdmin() {
+            const password = prompt('أدخل كلمة المرور:');
+            if (password === '1234567890') {
+                location.href = 'admin.html';
+            } else {
+                alert('كلمة المرور غير صحيحة!');
+            }
+        }
+
+        function goToRegister() {
+            location.href = 'register.html';
+        }
+
+        renderCategories();
+    </script>
+</body>
+</html>
